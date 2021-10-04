@@ -30,7 +30,14 @@ namespace TheCoin
         /// <inheritdoc cref="Exiled.Events.Handlers.Scp914.OnUpgradingItem(UpgradingItemEventArgs)"/>
         public void OnUpgradingItem(UpgradingItemEventArgs ev)
         {
-            UpgradePickup(ev.Item, ev.KnobSetting);
+            if (ev.Item.Type != ItemType.Coin)
+                return;
+
+            Timing.CallDelayed(0.1f, () =>
+            {
+                ev.Item.Destroy();
+                GetItem(ev.KnobSetting).Spawn(ev.OutputPosition);
+            });
         }
 
         /// <inheritdoc cref="Exiled.Events.Handlers.Scp914.OnUpgradingPlayer(UpgradingPlayerEventArgs)"/>
@@ -46,6 +53,12 @@ namespace TheCoin
                 UpgradeItem(item, ev.KnobSetting, ev.Player);
         }
 
+        /// <inheritdoc cref="Exiled.Events.Handlers.Scp914.OnUpgradingInventoryItem(UpgradingInventoryItemEventArgs)"/>
+        public void OnUpgradingInventoryItem(UpgradingInventoryItemEventArgs ev)
+        {
+            UpgradeItem(ev.Player.CurrentItem, ev.KnobSetting, ev.Player);
+        }
+
         private void UpgradeItem(Item item, Scp914KnobSetting setting, Player player)
         {
             if (item.Type != ItemType.Coin)
@@ -53,18 +66,8 @@ namespace TheCoin
 
             Timing.CallDelayed(0.1f, () =>
             {
+                player.RemoveItem(item);
                 GetItem(setting).Give(player);
-            });
-        }
-
-        private void UpgradePickup(Pickup pickup, Scp914KnobSetting setting)
-        {
-            if (pickup.Type != ItemType.Coin)
-                return;
-
-            Timing.CallDelayed(0.1f, () =>
-            {
-                GetItem(setting).Spawn(pickup.Position, pickup.Rotation);
             });
         }
 

@@ -30,6 +30,7 @@ namespace TheCoin
             eventHandlers = new EventHandlers(this);
             Scp914Handlers.UpgradingItem += eventHandlers.OnUpgradingItem;
             Scp914Handlers.UpgradingPlayer += eventHandlers.OnUpgradingPlayer;
+            Scp914Handlers.UpgradingInventoryItem += eventHandlers.OnUpgradingInventoryItem;
             base.OnEnabled();
         }
 
@@ -38,6 +39,7 @@ namespace TheCoin
         {
             Scp914Handlers.UpgradingItem -= eventHandlers.OnUpgradingItem;
             Scp914Handlers.UpgradingPlayer -= eventHandlers.OnUpgradingPlayer;
+            Scp914Handlers.UpgradingInventoryItem -= eventHandlers.OnUpgradingInventoryItem;
             eventHandlers = null;
             base.OnDisabled();
         }
