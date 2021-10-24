@@ -7,11 +7,11 @@
 
 namespace TheCoin
 {
+    using System.Collections.Generic;
     using System.Linq;
     using Exiled.API.Features;
     using Exiled.API.Features.Items;
     using Exiled.Events.EventArgs;
-    using MEC;
     using Scp914;
 
     /// <summary>
@@ -33,30 +33,34 @@ namespace TheCoin
             if (ev.Item.Type != ItemType.Coin)
                 return;
 
-            Timing.CallDelayed(0.1f, () =>
-            {
-                ev.Item.Destroy();
-                GetItem(ev.KnobSetting).Spawn(ev.OutputPosition);
-            });
+            ev.Item.Destroy();
+            GetItem(ev.KnobSetting)?.Spawn(ev.OutputPosition);
         }
 
         /// <inheritdoc cref="Exiled.Events.Handlers.Scp914.OnUpgradingPlayer(UpgradingPlayerEventArgs)"/>
         public void OnUpgradingPlayer(UpgradingPlayerEventArgs ev)
         {
-            if (ev.HeldOnly)
+            if (ev.Player.SessionVariables.ContainsKey("IsNPC"))
+                return;
+
+            if (ev.HeldOnly && ev.Player.CurrentItem != null)
             {
                 UpgradeItem(ev.Player.CurrentItem, ev.KnobSetting, ev.Player);
                 return;
             }
 
-            foreach (var item in ev.Player.Items.ToList())
+            foreach (Item item in ev.Player.Items.ToList())
                 UpgradeItem(item, ev.KnobSetting, ev.Player);
         }
 
         /// <inheritdoc cref="Exiled.Events.Handlers.Scp914.OnUpgradingInventoryItem(UpgradingInventoryItemEventArgs)"/>
         public void OnUpgradingInventoryItem(UpgradingInventoryItemEventArgs ev)
         {
-            UpgradeItem(ev.Player.CurrentItem, ev.KnobSetting, ev.Player);
+            if (ev.Player.SessionVariables.ContainsKey("IsNPC"))
+                return;
+
+            if (ev.Player.CurrentItem != null)
+                UpgradeItem(ev.Player.CurrentItem, ev.KnobSetting, ev.Player);
         }
 
         private void UpgradeItem(Item item, Scp914KnobSetting setting, Player player)
@@ -64,16 +68,22 @@ namespace TheCoin
             if (item.Type != ItemType.Coin)
                 return;
 
-            Timing.CallDelayed(0.1f, () =>
-            {
-                player.RemoveItem(item);
-                GetItem(setting).Give(player);
-            });
+            if (player.RemoveItem(item))
+                GetItem(setting)?.Give(player);
         }
 
         private Item GetItem(Scp914KnobSetting setting)
         {
-            ItemType itemType = plugin.Config.Recipes[setting].ElementAt(Exiled.Loader.Loader.Random.Next(plugin.Config.Recipes[setting].Count));
+            if (!plugin.Config.Recipes.TryGetValue(setting, out List<ItemType> items))
+                return null;
+
+            if (items.Count == 0)
+                return null;
+
+            ItemType itemType = items[Exiled.Loader.Loader.Random.Next(items.Count)];
+            if (itemType == ItemType.None)
+                return null;
+
             Item newItem = new Item(itemType);
             if (newItem is MicroHid microHid)
                 microHid.Energy = 1f;
