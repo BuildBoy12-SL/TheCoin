@@ -84,7 +84,7 @@ namespace TheCoin
             if (itemType == ItemType.None)
                 return null;
 
-            Item newItem = new Item(itemType);
+            Item newItem = Item.Create(itemType);
             if (newItem is MicroHid microHid)
                 microHid.Energy = 1f;
 
